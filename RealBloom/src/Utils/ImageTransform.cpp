@@ -1,6 +1,8 @@
 #include "ImageTransform.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #pragma region Shaders
 static const char* fragmentSource = R"glsl(
@@ -293,13 +295,13 @@ void ImageTransform::ensureInitGPU()
 
         // Create and compile the vertex shader
         if (!createShader(GL_VERTEX_SHADER, GL_BASE_VERTEX_SOURCE, s_vertShader, shaderLog))
-            throw std::exception(
+            throw std::runtime_error(
                 strFormat("Vertex shader compilation error: %s", shaderLog.c_str()).c_str()
             );
 
         // Create and compile the fragment shader
         if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, s_fragShader, shaderLog))
-            throw std::exception(
+            throw std::runtime_error(
                 strFormat("Fragment shader compilation error: %s", shaderLog.c_str()).c_str()
             );
 
@@ -324,7 +326,7 @@ void ImageTransform::ensureInitGPU()
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -807,7 +809,7 @@ void ImageTransform::apply(
     // Verify the input size
     uint32_t inputBufferSize = inputWidth * inputHeight * 4;
     if ((inputBuffer.size() != inputBufferSize) || (inputBuffer.size() < 1))
-        throw std::exception(makeError(__FUNCTION__, "", "Invalid input buffer size").c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", "Invalid input buffer size").c_str());
 
     // Clear the output buffer
     clearVector(outputBuffer);

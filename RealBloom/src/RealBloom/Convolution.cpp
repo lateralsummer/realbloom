@@ -2,7 +2,9 @@
 #include "ConvolutionThread.h"
 #include "ConvolutionFFT.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 namespace RealBloom
 {
@@ -264,21 +266,25 @@ namespace RealBloom
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
                     break;
+#ifdef _WIN32
                 case RealBloom::ConvolutionMethod::FFT_GPU:
                     convFftGPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
                     break;
+#endif
                 case RealBloom::ConvolutionMethod::NAIVE_CPU:
                     convNaiveCPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
                     break;
+#ifdef _WIN32
                 case RealBloom::ConvolutionMethod::NAIVE_GPU:
                     convNaiveGPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
                     break;
+#endif
                 default:
                     break;
                 }
@@ -410,7 +416,7 @@ namespace RealBloom
         uint32_t inputHeight = m_imgInput->getHeight();
 
         // Estimate resource usage
-        uint64_t numPixels = 0;
+        size_t numPixels = 0;
         uint64_t numPixelsPerBlock = 0;
         uint64_t ramUsage = 0;
         uint64_t vramUsage = 0;
@@ -522,7 +528,7 @@ namespace RealBloom
             m_status.setFftStage(strFormat("%u/%u Preparing", currStage, numStages));
             fftConv.pad();
 
-            if (m_status.mustCancel()) throw std::exception();
+            if (m_status.mustCancel()) throw std::runtime_error("");
 
             // Repeat for 3 color channels
             for (uint32_t i = 0; i < 3; i++)
@@ -532,14 +538,14 @@ namespace RealBloom
                 m_status.setFftStage(strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.inputFFT(i);
 
-                if (m_status.mustCancel()) throw std::exception();
+                if (m_status.mustCancel()) throw std::runtime_error("");
 
                 // Kernel FFT
                 currStage++;
                 m_status.setFftStage(strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.kernelFFT(i);
 
-                if (m_status.mustCancel()) throw std::exception();
+                if (m_status.mustCancel()) throw std::runtime_error("");
 
                 // Define the name of the arithmetic operation based on deconvolve
                 std::string arithmeticName =
@@ -552,14 +558,14 @@ namespace RealBloom
                 m_status.setFftStage(strFormat("%u/%u %s: %s", currStage, numStages, strFromColorChannelID(i).c_str(), arithmeticName.c_str()));
                 fftConv.multiplyOrDivide(i);
 
-                if (m_status.mustCancel()) throw std::exception();
+                if (m_status.mustCancel()) throw std::runtime_error("");
 
                 // Inverse FFT
                 currStage++;
                 m_status.setFftStage(strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.inverse(i);
 
-                if (m_status.mustCancel()) throw std::exception();
+                if (m_status.mustCancel()) throw std::runtime_error("");
             }
 
             // Get the final output
@@ -585,6 +591,7 @@ namespace RealBloom
         }
     }
 
+#ifdef _WIN32
     void Convolution::convFftGPU(
         std::vector<float>& kernelBuffer,
         uint32_t kernelWidth,
@@ -621,7 +628,7 @@ namespace RealBloom
             std::ofstream inpFile;
             inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             if (!inpFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
                 );
 
@@ -646,7 +653,7 @@ namespace RealBloom
             while (gpuHelper.isRunning())
             {
                 if (m_status.mustCancel())
-                    throw std::exception();
+                    throw std::runtime_error("");
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
 
@@ -654,7 +661,7 @@ namespace RealBloom
             std::ifstream outFile;
             outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
             if (!outFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
                 );
             else
@@ -700,6 +707,7 @@ namespace RealBloom
         // Clean up
         gpuHelper.cleanUp();
     }
+#endif // _WIN32
 
     void Convolution::convNaiveCPU(
         std::vector<float>& kernelBuffer,
@@ -840,6 +848,7 @@ namespace RealBloom
         clearVector(m_cpuThreads);
     }
 
+#ifdef _WIN32
     void Convolution::convNaiveGPU(
         std::vector<float>& kernelBuffer,
         uint32_t kernelWidth,
@@ -900,7 +909,7 @@ namespace RealBloom
 
             statMutex = createMutex(statMutexName);
             if (statMutex == NULL)
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Mutex \"%s\" could not be created.", statMutexName.c_str()).c_str()
                 );
 
@@ -908,7 +917,7 @@ namespace RealBloom
             std::ofstream inpFile;
             inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             if (!inpFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
                 );
 
@@ -934,7 +943,7 @@ namespace RealBloom
             while (gpuHelper.isRunning())
             {
                 if (m_status.mustCancel())
-                    throw std::exception();
+                    throw std::runtime_error("");
 
                 // Read the stat file
 
@@ -999,7 +1008,7 @@ namespace RealBloom
             std::ifstream outFile;
             outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
             if (!outFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
                 );
             else
@@ -1050,6 +1059,7 @@ namespace RealBloom
             deleteFile(statFilename);
         }
     }
+#endif // _WIN32
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh)
     {

@@ -115,7 +115,7 @@ bool CliParser::hasValue(const std::vector<std::string>& aliases) const
 const std::string& CliParser::get(const std::string& argument) const
 {
     if (!hasValue(argument))
-        throw std::exception(std::string("Argument \"" + argument + "\" doesn't have a value.").c_str());
+        throw std::runtime_error(std::string("Argument \"" + argument + "\" doesn't have a value.").c_str());
 
     std::vector<std::string>::const_iterator itr;
     itr = std::find(this->m_tokens.begin(), this->m_tokens.end(), argument);
@@ -128,7 +128,7 @@ const std::string& CliParser::get(const std::string& argument) const
 const std::string& CliParser::get(const std::vector<std::string>& aliases) const
 {
     if (!hasValue(aliases))
-        throw std::exception(std::string("Argument \"" + aliases[0] + "\" doesn't have a value.").c_str());
+        throw std::runtime_error(std::string("Argument \"" + aliases[0] + "\" doesn't have a value.").c_str());
 
     for (const auto& alias : aliases)
         if (hasValue(alias)) return get(alias);
@@ -140,7 +140,7 @@ const std::string& CliParser::get(size_t index) const
 {
     if (index < m_tokens.size())
         return m_tokens[index];
-    throw std::exception(std::string("Invalid argument index (" + std::to_string(index) + ").").c_str());
+    throw std::runtime_error(std::string("Invalid argument index (" + std::to_string(index) + ").").c_str());
 }
 
 bool CliParser::first(const std::string& command) const

@@ -1,6 +1,8 @@
 #include "Diffraction.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 namespace RealBloom
 {
@@ -49,7 +51,7 @@ namespace RealBloom
 
             // Validate the dimensions
             if ((inputWidth < 4) || (inputHeight < 4))
-                throw std::exception("Input dimensions are too small.");
+                throw std::runtime_error("Input dimensions are too small.");
 
             // Output dimensions
             uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth + 1) : (inputWidth);

@@ -57,6 +57,7 @@ Index of this file:
 
 #include <string>
 #include <exception>
+#include <stdexcept>
 #include <memory>
 #include <mutex>
 
@@ -5665,7 +5666,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
 #pragma region RealBloom modifications
         if (OCIO_COLOR_CORRECTION)
         {
-            throw std::exception("Using ImGuiColorEditFlags_PickerHueWheel: No color correction supported.");
+            throw std::runtime_error("Using ImGuiColorEditFlags_PickerHueWheel: No color correction supported.");
         }
         else
         {

@@ -284,7 +284,11 @@ void CMS::updateProcessors()
         {
             // Prepare shader description
             OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
+#ifdef __APPLE__
+            shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_4_0);
+#else
             shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_1_3);
+#endif
             shaderDesc->setFunctionName("OCIODisplay");
             shaderDesc->setResourcePrefix("ocio_");
 
@@ -335,7 +339,7 @@ const BaseStatus& CMS::getStatus()
 void CMS::ensureOK()
 {
     if (!S_STATUS.isOK())
-        throw std::exception(strFormat("CMS failure: %s", S_STATUS.getError().c_str()).c_str());
+        throw std::runtime_error(strFormat("CMS failure: %s", S_STATUS.getError().c_str()).c_str());
 }
 
 bool CMS::usingGPU()

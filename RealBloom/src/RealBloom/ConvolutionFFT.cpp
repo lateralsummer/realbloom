@@ -1,6 +1,8 @@
 #include "ConvolutionFFT.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 namespace RealBloom
 {

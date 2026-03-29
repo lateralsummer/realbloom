@@ -12,6 +12,8 @@
 #include "../Misc.h"
 
 // OpenGL Shader Storage Buffer Wrapper
+// Requires OpenGL 4.3 (GL_SHADER_STORAGE_BUFFER) — not available on macOS
+#ifndef __APPLE__
 class GlShaderStorageBuffer : public GlWrapper
 {
 public:
@@ -31,3 +33,4 @@ private:
     GLuint m_ssbo = 0;
 
 };
+#endif // !__APPLE__

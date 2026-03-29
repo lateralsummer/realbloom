@@ -122,7 +122,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
     try
     {
         if (filename.empty())
-            throw std::exception("Filename was empty.");
+            throw std::runtime_error("Filename was empty.");
 
         // Get the extension
         std::string extension = getFileExtension(filename);
@@ -139,14 +139,14 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         }
         else
         {
-            throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
+            throw std::runtime_error(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
         }
 
         // Open the file
         OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
         if (!inp)
         {
-            throw std::exception(strFormat("Couldn't open input file \"%s\".", filename.c_str()).c_str());
+            throw std::runtime_error(strFormat("Couldn't open input file \"%s\".", filename.c_str()).c_str());
         }
 
         // Read the specs
@@ -177,7 +177,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         if ((channels != 1) && (channels != 3) && (channels != 4))
         {
             inp->close();
-            throw std::exception(strFormat("Input image must have 1, 3, or 4 color channels, not %d.", channels).c_str());
+            throw std::runtime_error(strFormat("Input image must have 1, 3, or 4 color channels, not %d.", channels).c_str());
         }
 
         // Prepare buffer
@@ -188,7 +188,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         if (!inp->read_image(0, 0, 0, -1, OIIO::TypeDesc::FLOAT, buffer.data()))
         {
             inp->close();
-            throw std::exception(makeIoError(
+            throw std::runtime_error(makeIoError(
                 strFormat("Couldn't read image from file \"%s\"", filename.c_str()),
                 inp->has_error(),
                 inp->geterror()
@@ -265,7 +265,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
             }
             catch (OCIO::Exception& e)
             {
-                throw std::exception(strFormat("OpenColorIO Error: %s", e.what()).c_str());
+                throw std::runtime_error(strFormat("OpenColorIO Error: %s", e.what()).c_str());
             }
         }
 
@@ -283,7 +283,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -292,14 +292,14 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
     try
     {
         if (filename.empty())
-            throw std::exception("Filename was empty.");
+            throw std::runtime_error("Filename was empty.");
 
         // Get the extension
 
         std::string extension = getFileExtension(filename);
 
         if (!contains(getAllExtensions(), extension))
-            throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
+            throw std::runtime_error(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
 
         bool nonLinear = contains(getNonLinearExtensions(), extension);
 
@@ -370,7 +370,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             }
             catch (OCIO::Exception& e)
             {
-                throw std::exception(strFormat("OpenColorIO Error: %s", e.what()).c_str());
+                throw std::runtime_error(strFormat("OpenColorIO Error: %s", e.what()).c_str());
             }
         }
 
@@ -381,7 +381,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         std::unique_ptr<OIIO::ImageOutput> out = OIIO::ImageOutput::create(filename);
         if (!out)
         {
-            throw std::exception("Couldn't create ImageOutput.");
+            throw std::runtime_error("Couldn't create ImageOutput.");
         }
 
         // Create ImageSpec
@@ -390,7 +390,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         // Embed the color space name
         if ((!viewTransform) && contains(getMetaExtensions(), extension))
         {
-            spec.attribute(attribNameColorSpace, OIIO::TypeDesc::TypeString, csName);
+            spec.attribute(attribNameColorSpace, OIIO::TypeString, csName);
         }
 
         // Write the image
@@ -401,7 +401,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             else
             {
                 out->close();
-                throw std::exception(makeIoError(
+                throw std::runtime_error(makeIoError(
                     strFormat("Couldn't write image to file \"%s\"", filename.c_str()),
                     out->has_error(),
                     out->geterror()
@@ -410,7 +410,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         }
         else
         {
-            throw std::exception(makeIoError(
+            throw std::runtime_error(makeIoError(
                 strFormat("Couldn't open output file \"%s\"", filename.c_str()),
                 out->has_error(),
                 out->geterror()
@@ -422,7 +422,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 

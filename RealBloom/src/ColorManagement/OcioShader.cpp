@@ -6,7 +6,11 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     // Make fragment shader source code
     std::ostringstream fragSourceStream;
     fragSourceStream
+#ifdef __APPLE__
+        << "#version 400" << std::endl
+#else
         << "#version 130" << std::endl
+#endif
         << std::endl
         << m_shaderDesc->getShaderText() << std::endl
         << std::endl
@@ -53,13 +57,13 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
 
     // Create and compile the vertex shader
     if (!createShader(GL_VERTEX_SHADER, GL_BASE_VERTEX_SOURCE, m_vertShader, shaderLog))
-        throw std::exception(
+        throw std::runtime_error(
             makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create and compile the fragment shader
     if (!createShader(GL_FRAGMENT_SHADER, fragSource.c_str(), m_fragShader, shaderLog))
-        throw std::exception(
+        throw std::runtime_error(
             makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
@@ -179,8 +183,9 @@ void OcioShader::prepareLuts()
         uint32_t width = 0;
         uint32_t height = 0;
         OCIO::GpuShaderDesc::TextureType channel = OCIO::GpuShaderDesc::TEXTURE_RGB_CHANNEL;
+        OCIO::GpuShaderDesc::TextureDimensions dimensions = OCIO::GpuShaderDesc::TEXTURE_2D;
         OCIO::Interpolation interpolation = OCIO::INTERP_LINEAR;
-        m_shaderDesc->getTexture(idx, textureName, samplerName, width, height, channel, interpolation);
+        m_shaderDesc->getTexture(idx, textureName, samplerName, width, height, channel, dimensions, interpolation);
 
         if (!textureName || !*textureName
             || !samplerName || !*samplerName

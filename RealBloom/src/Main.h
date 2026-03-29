@@ -1,7 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
+#endif
 
 #include <iostream>
 #include <vector>
@@ -46,7 +48,9 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
+#ifndef __APPLE__
 #include "Utils/OpenGL/GlContext.h"
+#endif
 #include "Utils/OpenGL/GlFullPlaneVertices.h"
 
 #include "Utils/FileDialogs.h"

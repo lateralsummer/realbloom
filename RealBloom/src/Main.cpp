@@ -10,6 +10,7 @@ static GLFWwindow* window = nullptr;
 static ImGuiIO* io = nullptr;
 static bool appRunning = true;
 
+static float hiDpiScale = 1.0f; // Retina content scale factor
 static bool showRendererName = false;
 static bool showFPS = false;
 static bool showDebugPanel = false;
@@ -109,7 +110,11 @@ int main(int argc, char** argv)
     {
         // Change the working directory so ImGui can load its
         // config properly
+#ifdef _WIN32
         SetCurrentDirectoryA(getExecDir().c_str());
+#else
+        std::filesystem::current_path(getExecDir());
+#endif
 
         // Setup GLFW
         if (!setupGLFW())
@@ -152,7 +157,9 @@ int main(int argc, char** argv)
     if (!CLI::Interface::active())
     {
         // Minimize the console window
+#ifdef _WIN32
         PostMessage(GetConsoleWindow(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
+#endif
 
         // Native File Dialog Extended
         NFD_Init();
@@ -198,6 +205,7 @@ int main(int argc, char** argv)
         conv.setImgConvResult(getSlotByID("cv-result").viewImage.get());
     }
 
+#ifdef _WIN32
     // To kill child processes when the parent dies
     // https://stackoverflow.com/a/53214/18049911
     HANDLE hJobObject = CreateJobObjectA(NULL, NULL);
@@ -208,6 +216,7 @@ int main(int argc, char** argv)
         SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
         Async::emitSignal("hJobObject", (void*)hJobObject);
     }
+#endif
 
     // Update resource usage info for convolution (GUI)
     if (!CLI::Interface::active())
@@ -284,7 +293,7 @@ int main(int argc, char** argv)
     if (CLI::Interface::active())
     {
         // Create an OpenGL context
-
+#ifdef _WIN32
         std::string ctxError;
         bool ctxSuccess = oglOneTimeContext(
             glVersionMajor, glVersionMinor,
@@ -300,6 +309,39 @@ int main(int argc, char** argv)
 
         if (!ctxSuccess)
             printError(__FUNCTION__, "", strFormat("OpenGL context initialization error: %s", ctxError.c_str()));
+#else
+        // On macOS, create a hidden GLFW window for the OpenGL context
+        if (!glfwInit())
+        {
+            printError(__FUNCTION__, "", "Failed to initialize GLFW for CLI mode.");
+        }
+        else
+        {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glVersionMajor);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glVersionMinor);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+            GLFWwindow* cliWindow = glfwCreateWindow(128, 128, "RealBloom CLI", NULL, NULL);
+            if (cliWindow)
+            {
+                glfwMakeContextCurrent(cliWindow);
+                glewExperimental = GL_TRUE;
+                glewInit();
+
+                CLI::Interface::proceed();
+                cleanUp();
+
+                glfwDestroyWindow(cliWindow);
+            }
+            else
+            {
+                printError(__FUNCTION__, "", "Failed to create hidden GLFW window for CLI mode.");
+            }
+            glfwTerminate();
+        }
+#endif
     }
     else
     {
@@ -853,7 +895,7 @@ void layoutMisc()
     if (ImGui::SliderFloat("Scale##Misc", &Config::UI_SCALE, Config::UI_MIN_SCALE, Config::UI_MAX_SCALE))
     {
         Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::UI_MIN_SCALE), Config::UI_MAX_SCALE);
-        io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
+        io->FontGlobalScale = (Config::UI_SCALE / Config::UI_MAX_SCALE) / hiDpiScale;
     }
 
     // UI Renderer
@@ -1689,7 +1731,9 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+#ifdef _WIN32
 #include <GL/wglew.h>
+#endif
 
 bool setupGLFW()
 {
@@ -1761,19 +1805,28 @@ bool setupImGui()
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
+    // Query content scale for HiDPI (Retina) displays
+#ifdef __APPLE__
+    {
+        float xscale, yscale;
+        glfwGetWindowContentScale(window, &xscale, &yscale);
+        hiDpiScale = xscale; // On macOS Retina, typically 2.0
+    }
+#endif
+
+    io->FontGlobalScale = (Config::UI_SCALE / Config::UI_MAX_SCALE) / hiDpiScale;
 
     fontRoboto = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Regular.ttf").c_str(),
-        17.5f * Config::UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE * hiDpiScale);
 
     fontRobotoBold = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
-        19.5f * Config::UI_MAX_SCALE);
+        19.5f * Config::UI_MAX_SCALE * hiDpiScale);
 
     fontMono = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
-        17.5f * Config::UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE * hiDpiScale);
 
     if (fontRoboto && fontRobotoBold && fontMono)
         return true;

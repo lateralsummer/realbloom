@@ -34,7 +34,7 @@ namespace RealBloom
         try
         {
             if (table == nullptr)
-                throw std::exception("table was null.");
+                throw std::runtime_error("table was null.");
 
             uint32_t pWidth = std::max(2u, (uint32_t)table->getCount() * 2);
             uint32_t pHeight = std::max(2u, pWidth / 10);
@@ -73,7 +73,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+            throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
         }
     }
 
@@ -114,7 +114,7 @@ namespace RealBloom
                     // CMF table
                     std::shared_ptr<CmfTable> table = CMF::getActiveTable();
                     if (table.get() == nullptr)
-                        throw std::exception("An active CMF table is needed.");
+                        throw std::runtime_error("An active CMF table is needed.");
 
                     // Input buffer
                     std::vector<float> inputBuffer;
@@ -126,7 +126,7 @@ namespace RealBloom
                     std::vector<float> cmfSamples;
                     table->sampleRGB(dispSteps, true, cmfSamples);
                     if (cmfSamples.size() < (dispSteps * 3))
-                        throw std::exception("Invalid number of samples provided by CmfTable.");
+                        throw std::runtime_error("Invalid number of samples provided by CmfTable.");
 
                     // Call the appropriate function
                     switch (m_capturedParams.methodInfo.method)
@@ -136,11 +136,13 @@ namespace RealBloom
                             inputBuffer, inputWidth, inputHeight,
                             inputBufferSize, cmfSamples);
                         break;
+#ifdef _WIN32
                     case RealBloom::DispersionMethod::GPU:
                         dispGPU(
                             inputBuffer, inputWidth, inputHeight,
                             inputBufferSize, cmfSamples);
                         break;
+#endif
                     default:
                         break;
                     }
@@ -351,7 +353,7 @@ namespace RealBloom
                 threadJoin(ct->getThread().get());
 
             if (m_status.mustCancel())
-                throw std::exception();
+                throw std::runtime_error("");
 
             // Add the buffers from each thread
             {
@@ -386,6 +388,7 @@ namespace RealBloom
         m_threads.clear();
     }
 
+#ifdef _WIN32
     void Dispersion::dispGPU(
         std::vector<float>& inputBuffer,
         uint32_t inputWidth,
@@ -414,7 +417,7 @@ namespace RealBloom
             std::ofstream inpFile;
             inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             if (!inpFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
                 );
 
@@ -439,7 +442,7 @@ namespace RealBloom
             while (gpuHelper.isRunning())
             {
                 if (m_status.mustCancel())
-                    throw std::exception();
+                    throw std::runtime_error("");
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
 
@@ -447,7 +450,7 @@ namespace RealBloom
             std::ifstream outFile;
             outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
             if (!outFile.is_open())
-                throw std::exception(
+                throw std::runtime_error(
                     strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
                 );
             else
@@ -493,5 +496,6 @@ namespace RealBloom
         // Clean up
         gpuHelper.cleanUp();
     }
+#endif // _WIN32
 
 }

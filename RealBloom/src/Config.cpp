@@ -26,13 +26,13 @@ void Config::load()
     try
     {
         if (!std::filesystem::exists(CFG_FILENAME))
-            throw std::exception(strFormat("Config file \"%s\" doesn't exist.", CFG_FILENAME.c_str()).c_str());
+            throw std::runtime_error(strFormat("Config file \"%s\" doesn't exist.", CFG_FILENAME.c_str()).c_str());
 
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_file(CFG_FILENAME.c_str());
 
         if (!result)
-            throw std::exception(strFormat(
+            throw std::runtime_error(strFormat(
                 "Failed to read the config from \"%s\": %s (Offset: %d)",
                 CFG_FILENAME.c_str(),
                 result.description(),
@@ -72,7 +72,7 @@ void Config::save()
         outFile.open(CFG_FILENAME, std::ofstream::out | std::ofstream::trunc);
 
         if (!outFile)
-            throw std::exception(strFormat("Failed to open config file \"%s\".", CFG_FILENAME.c_str()).c_str());
+            throw std::runtime_error(strFormat("Failed to open config file \"%s\".", CFG_FILENAME.c_str()).c_str());
 
         pugi::xml_document doc;
 

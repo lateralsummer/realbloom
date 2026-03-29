@@ -269,7 +269,7 @@ void CmImage::applyViewTransform(
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 
     uint32_t size = width * height * 4;
@@ -305,7 +305,7 @@ void CmImage::applyViewTransform(
         }
         catch (std::exception& e)
         {
-            throw std::exception(makeError(__FUNCTION__, "Color Transform (CPU)", e.what()).c_str());
+            throw std::runtime_error(makeError(__FUNCTION__, "Color Transform (CPU)", e.what()).c_str());
         }
     }
 
@@ -329,7 +329,7 @@ void CmImage::applyViewTransform(
             }
             catch (const std::exception& e)
             {
-                throw std::exception(makeError(__FUNCTION__, "Create texture", e.what()).c_str());
+                throw std::runtime_error(makeError(__FUNCTION__, "Create texture", e.what()).c_str());
             }
         }
     }
@@ -346,7 +346,7 @@ void CmImage::applyViewTransform(
         }
         catch (const std::exception& e)
         {
-            throw std::exception(makeError(__FUNCTION__, "Upload texture", e.what()).c_str());
+            throw std::runtime_error(makeError(__FUNCTION__, "Upload texture", e.what()).c_str());
         }
     }
 
@@ -411,7 +411,7 @@ void CmImage::applyViewTransform(
         }
         catch (const std::exception& e)
         {
-            throw std::exception(makeError(__FUNCTION__, "Color Transform (GPU)", e.what()).c_str());
+            throw std::runtime_error(makeError(__FUNCTION__, "Color Transform (GPU)", e.what()).c_str());
         }
     }
 
@@ -437,7 +437,7 @@ void CmImage::applyViewTransform(
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "Read back (GPU)", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "Read back (GPU)", e.what()).c_str());
     }
 }
 
