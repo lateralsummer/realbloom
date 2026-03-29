@@ -31,7 +31,7 @@ void GlFullPlaneVertices::ensureInit()
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -71,7 +71,7 @@ void GlFullPlaneVertices::enable(
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -99,6 +99,6 @@ void GlFullPlaneVertices::disable(GLuint program, const char* posAttribName, con
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
+        throw std::runtime_error(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }

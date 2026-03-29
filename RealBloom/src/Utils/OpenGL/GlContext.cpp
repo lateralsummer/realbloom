@@ -1,5 +1,7 @@
 #include "GlContext.h"
 
+#ifdef _WIN32
+
 static HGLRC realContext = NULL;
 
 static int g_glVersionMajor;
@@ -147,3 +149,50 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     }
     return 0;
 }
+
+#else // !_WIN32 — GLFW-based implementation for macOS/Linux
+
+bool oglOneTimeContext(int versionMajor, int versionMinor, std::function<void()> job, std::string& outError)
+{
+    outError = "";
+
+    if (!glfwInit())
+    {
+        outError = "Failed to initialize GLFW.";
+        return false;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, versionMajor);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, versionMinor);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+    GLFWwindow* window = glfwCreateWindow(128, 128, "RealBloom GL Context", NULL, NULL);
+    if (!window)
+    {
+        outError = strFormat("Failed to create OpenGL %d.%d context.", versionMajor, versionMinor);
+        glfwTerminate();
+        return false;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    glewExperimental = GL_TRUE;
+    GLenum glewInitResult = glewInit();
+    if (glewInitResult != GLEW_OK)
+    {
+        outError = strFormat("Failed to initialize GLEW: %d", glewInitResult);
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return false;
+    }
+
+    job();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return true;
+}
+
+#endif // _WIN32

@@ -27,7 +27,7 @@ GlFramebuffer::GlFramebuffer(uint32_t width, uint32_t height)
     checkGlStatus(__FUNCTION__, "glCheckFramebufferStatus");
 
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
-        throw std::exception(
+        throw std::runtime_error(
             makeError(__FUNCTION__, "", strFormat("Framebuffer was not ready. Status: %s", toHexStr(fbStatus).c_str())).c_str()
         );
 }

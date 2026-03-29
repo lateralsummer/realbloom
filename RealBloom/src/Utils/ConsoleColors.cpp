@@ -27,13 +27,13 @@ const char* consoleColor(int font, int back, int style)
 
     if (back > 0 && style > 0)
     {
-        sprintf_s(code, "\033[%d;%d;%dm", font, back, style);
+        snprintf(code, sizeof(code), "\033[%d;%d;%dm", font, back, style);
     } else if (back > 0)
     {
-        sprintf_s(code, "\033[%d;%dm", font, back);
+        snprintf(code, sizeof(code), "\033[%d;%dm", font, back);
     } else
     {
-        sprintf_s(code, "\033[%dm", font);
+        snprintf(code, sizeof(code), "\033[%dm", font);
     }
 
     return code;

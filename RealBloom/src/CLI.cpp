@@ -1,10 +1,17 @@
 #include "CLI.h"
 
+#ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
+#endif
+
+#include <stdexcept>
+#ifndef _WIN32
+#include <csignal>
+#endif
 
 #include <OpenColorIO/OpenColorIO.h>
-namespace OCIO = OpenColorIO_v2_1;
+namespace OCIO = OCIO_NAMESPACE;
 
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
@@ -290,7 +297,7 @@ namespace CLI
 
         // Verify the index
         if (index >= aliasMaps.size())
-            throw std::exception(makeError(__FUNCTION__, "", "Invalid alias map index").c_str());
+            throw std::runtime_error(makeError(__FUNCTION__, "", "Invalid alias map index").c_str());
 
         // Get a reference to the alias map that'll be used
         return aliasMaps[index];
@@ -772,12 +779,18 @@ namespace CLI
     void Interface::proceed()
     {
         // Enable console colors
+#ifdef _WIN32
         activateVirtualTerminal();
+#endif
 
         // Handle Ctrl-C
+#ifdef _WIN32
         // https://learn.microsoft.com/en-us/windows/console/registering-a-control-handler-function
         if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
             printWarning(__FUNCTION__, "", "Couldn't set control handler.");
+#else
+        std::signal(SIGINT, [](int) { interrupt = true; });
+#endif
 
         std::string line = "";
         while (!interrupt)
@@ -975,7 +988,7 @@ namespace CLI
 
         // Print error
         if (!diff.getStatus().isOK())
-            throw std::exception(diff.getStatus().getError().c_str());
+            throw std::runtime_error(diff.getStatus().getError().c_str());
 
         // Write the output image
         {
@@ -1086,7 +1099,7 @@ namespace CLI
 
         // Print error
         if (!disp.getStatus().isOK())
-            throw std::exception(disp.getStatus().getError().c_str());
+            throw std::runtime_error(disp.getStatus().getError().c_str());
 
         // Write the output image
         {
@@ -1250,7 +1263,7 @@ namespace CLI
 
         // Print error
         if (!conv.getStatus().isOK())
-            throw std::exception(conv.getStatus().getError().c_str());
+            throw std::runtime_error(conv.getStatus().getError().c_str());
 
         // Blending
         {
@@ -1449,7 +1462,7 @@ namespace CLI
         }
         else
         {
-            throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
+            throw std::runtime_error(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
         }
     }
 
@@ -1476,6 +1489,7 @@ namespace CLI
         CmImageIO::setNonLinearSpace(colorSpace);
     }
 
+#ifdef _WIN32
     // https://learn.microsoft.com/en-us/windows/console/handlerroutine
     BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
     {
@@ -1498,5 +1512,6 @@ namespace CLI
         interrupt = true;
         return TRUE;
     }
+#endif
 
 }

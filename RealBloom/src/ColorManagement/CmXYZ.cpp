@@ -49,7 +49,7 @@ bool CmXYZ::init()
             S_INFO.method = XyzConversionMethod::None;
 
         if (S_INFO.method == XyzConversionMethod::None)
-            throw std::exception(
+            throw std::runtime_error(
                 "We couldn't find the proper XYZ color space in your OCIO "
                 "config. If it contains the CIE XYZ I-E color space, change "
                 "the method to \"User Config\" and choose the XYZ space. "
@@ -86,5 +86,5 @@ const BaseStatus& CmXYZ::getStatus()
 void CmXYZ::ensureOK()
 {
     if (!S_STATUS.isOK())
-        throw std::exception(strFormat("CmXYZ failure: %s", S_STATUS.getError().c_str()).c_str());
+        throw std::runtime_error(strFormat("CmXYZ failure: %s", S_STATUS.getError().c_str()).c_str());
 }

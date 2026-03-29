@@ -34,9 +34,11 @@ private:
     std::string m_inpFilename;
     std::string m_outFilename;
 
+#ifdef _WIN32
     STARTUPINFOA m_startupInfo{ };
     PROCESS_INFORMATION m_processInfo{ };
     bool m_hasHandles = false;
+#endif
 
 public:
     GpuHelper();

@@ -1,5 +1,7 @@
 #include "GlShaderStorageBuffer.h"
 
+#ifndef __APPLE__
+
 GlShaderStorageBuffer::GlShaderStorageBuffer()
 {
     glGenBuffers(1, &m_ssbo);
@@ -73,3 +75,5 @@ void GlShaderStorageBuffer::zeroFill(uint32_t size)
     glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(float), zeroBuffer.data(), GL_STREAM_COPY);
     checkGlStatus(__FUNCTION__, "glBufferData");
 }
+
+#endif // !__APPLE__

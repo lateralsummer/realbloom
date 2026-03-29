@@ -77,6 +77,7 @@ float getElapsedMs(std::chrono::system_clock::time_point startTime, std::chrono:
     return (float)elapsedNs / 1000000.0f;
 }
 
+#ifdef _WIN32
 HANDLE createMutex(const std::string& name)
 {
     return CreateMutexA(
@@ -113,10 +114,15 @@ void closeMutex(HANDLE& hMutex)
         hMutex = NULL;
     }
 }
+#endif
 
 const std::string& getPathSeparator()
 {
+#ifdef _WIN32
     static std::string pathSeparator = "\\";
+#else
+    static std::string pathSeparator = "/";
+#endif
     return pathSeparator;
 }
 
@@ -127,7 +133,15 @@ const std::string& getExecDir()
     if (execDir.empty())
     {
         char path_cstr[2048] = { 0 };
+#ifdef _WIN32
         GetModuleFileNameA(NULL, path_cstr, 2048);
+#elif defined(__APPLE__)
+        uint32_t bufSize = sizeof(path_cstr);
+        _NSGetExecutablePath(path_cstr, &bufSize);
+#else
+        ssize_t len = readlink("/proc/self/exe", path_cstr, sizeof(path_cstr) - 1);
+        if (len > 0) path_cstr[len] = '\0';
+#endif
 
         auto path = std::filesystem::path(std::string(path_cstr)).parent_path();
         execDir = std::filesystem::canonical(path).string();
@@ -147,11 +161,9 @@ const std::string& getTempDirectory()
 
     if (tempDir.empty())
     {
-        char path_cstr[2048] = { 0 };
-        if (GetTempPathA(2048, path_cstr))
-            tempDir = path_cstr;
-        else
-            tempDir = std::filesystem::temp_directory_path().string();
+        tempDir = std::filesystem::temp_directory_path().string();
+        if (!tempDir.ends_with(getPathSeparator()))
+            tempDir += getPathSeparator();
     }
 
     return tempDir;
@@ -175,6 +187,7 @@ bool deleteFile(const std::string& filename)
     return true;
 }
 
+#ifdef _WIN32
 void killProcess(PROCESS_INFORMATION pi)
 {
     if (TerminateProcess(pi.hProcess, 1))
@@ -188,8 +201,17 @@ bool processIsRunning(PROCESS_INFORMATION pi)
         return exitCode == STILL_ACTIVE;
     return false;
 }
+#endif
 
 void openURL(std::string url)
 {
+#ifdef _WIN32
     ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#elif defined(__APPLE__)
+    std::string cmd = "open \"" + url + "\"";
+    system(cmd.c_str());
+#else
+    std::string cmd = "xdg-open \"" + url + "\"";
+    system(cmd.c_str());
+#endif
 }
